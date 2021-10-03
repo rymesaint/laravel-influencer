@@ -1,0 +1,60 @@
+version: '3.8'
+services:
+  # frontend:
+  #   image: antoniopapa1991/admin-frontend
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - app
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DB_HOST: admin_db
+      DB_DATABASE: admin
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      REDIS_HOST: redis
+    command: 'php artisan serve --host=0.0.0.0'
+    ports:
+      - 8000:8000
+    volumes:
+      - .:/app
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - app
+
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: 'php artisan queue:work'
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:6.2.5
+    ports:
+      - 6379:6379
+    networks:
+      - app
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: admin
+      MYSQL_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - .storage/dbdata:/var/lib/mysql
+    ports:
+      - ${MYSQL_PORT}:3306
+    networks:
+      - app
+
+networks:
+  app:
